@@ -1,172 +1,151 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="ja">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.4">
-  <style type="text/css">
-    body {background-color: #ecf1f6}
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Hiragino Sans'}
-    span.s1 {font: 12.0px 'Hiragino Sans'}
-    span.s2 {font: 12.0px 'Apple Color Emoji'}
-    span.s3 {font: 12.0px Helvetica}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>あかりちゃん 送迎アプリ</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f4f7f6; color: #333; }
+    header { background: #ff9a9e; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; }
+    .container { padding: 15px; }
+    .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    h2 { margin-top: 0; font-size: 18px; color: #555; border-bottom: 2px solid #ff9a9e; padding-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+    th { background: #fef0f0; }
+    .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 5px;}
+    .btn-aya { background: #ff758c; }
+    .btn-kenji { background: #4facfe; }
+    .btn-none { background: #e0e0e0; color: #333; }
+    .chat-box { height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #fafafa; border-radius: 5px;}
+    .msg { margin-bottom: 10px; padding: 8px; border-radius: 5px; max-width: 80%; display: inline-block; clear: both; float: left; }
+    .msg.aya { background: #ffe2e6; float: right; }
+    .msg.kenji { background: #e2f3ff; }
+    .msg-wrapper { overflow: hidden; width: 100%; }
+    input, select { padding: 10px; width: calc(100% - 22px); margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;}
   </style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="ja"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;<span class="s1">あかりちゃん</span> <span class="s1">送迎アプリ</span>&lt;/title&gt;</p>
-<p class="p2"><span class="Apple-converted-space">  </span></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"&gt;&lt;/script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"&gt;&lt;/script&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f4f7f6; color: #333; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>header { background: #ff9a9e; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.container { padding: 15px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>h2 { margin-top: 0; font-size: 18px; color: #555; border-bottom: 2px solid #ff9a9e; padding-bottom: 5px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>table { width: 100%; border-collapse: collapse; margin-top: 10px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>th { background: #fef0f0; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 5px;}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.btn-aya { background: #ff758c; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.btn-kenji { background: #4facfe; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.btn-none { background: #e0e0e0; color: #333; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.chat-box { height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #fafafa; border-radius: 5px;}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.msg { margin-bottom: 10px; padding: 8px; border-radius: 5px; max-width: 80%; display: inline-block; clear: both; float: left; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.msg.aya { background: #ffe2e6; float: right; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.msg.kenji { background: #e2f3ff; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.msg-wrapper { overflow: hidden; width: 100%; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>input, select { padding: 10px; width: calc(100% - 22px); margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;header&gt;<span class="s2">🌸</span> <span class="s1">あかりちゃん</span> <span class="s1">送迎アプリ</span>&lt;/header&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="container"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;label style="font-weight: bold;"&gt;<span class="s2">👤</span> <span class="s1">あなたはどっち？</span>:&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;select id="userSelect"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;option value="<span class="s1">あや</span>"&gt;<span class="s1">あや</span>&lt;/option&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;option value="<span class="s1">けんじさん</span>"&gt;<span class="s1">けんじさん</span>&lt;/option&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/select&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;h2&gt;<span class="s2">📅</span> <span class="s1">今週のシフト</span> (<span class="s1">月～金</span>)&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;p style="font-size:12px; color:#666;"&gt;<span class="s1">タップすると担当が変わります</span>&lt;br&gt;<span class="s1">（あや</span> <span class="s1">⇄</span> <span class="s1">けんじさん</span> <span class="s1">⇄</span> <span class="s1">未定）</span>&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;table id="shiftTable"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;tr&gt;&lt;th&gt;<span class="s1">曜日</span>&lt;/th&gt;&lt;th&gt;<span class="s1">朝</span> (<span class="s1">送り</span>)&lt;/th&gt;&lt;th&gt;<span class="s1">夕</span> (<span class="s1">迎え</span>)&lt;/th&gt;&lt;/tr&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/table&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;h2&gt;<span class="s2">💬</span> <span class="s1">連絡チャット</span>&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div id="chatBox" class="chat-box"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;input type="text" id="chatInput" placeholder="<span class="s1">メッセージを入力</span>..."&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;button class="btn btn-aya" onclick="sendMessage()" style="background: #4CAF50;"&gt;<span class="s1">送信する</span>&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>// 1. <span class="s1">いただいた鍵で</span>Firebase<span class="s1">に接続</span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const firebaseConfig = {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>apiKey: "AIzaSyDiTWsBZSTEAt_xM_SU9yu7QOAAh_c9Cns",</p>
-<p class="p1"><span class="Apple-converted-space">      </span>authDomain: "okurimukae-8a08e.firebaseapp.com",</p>
-<p class="p1"><span class="Apple-converted-space">      </span>projectId: "okurimukae-8a08e",</p>
-<p class="p1"><span class="Apple-converted-space">      </span>storageBucket: "okurimukae-8a08e.firebasestorage.app",</p>
-<p class="p1"><span class="Apple-converted-space">      </span>messagingSenderId: "460205449169",</p>
-<p class="p1"><span class="Apple-converted-space">      </span>appId: "1:460205449169:web:325d073bdbdc84b0134af0"</p>
-<p class="p1"><span class="Apple-converted-space">    </span>};</p>
-<p class="p1"><span class="Apple-converted-space">    </span>firebase.initializeApp(firebaseConfig);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const db = firebase.firestore();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// 2. <span class="s1">シフト表を作る</span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const days = ["<span class="s1">月</span>", "<span class="s1">火</span>", "<span class="s1">水</span>", "<span class="s1">木</span>", "<span class="s1">金</span>"];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const times = ["<span class="s1">朝</span>", "<span class="s1">夕</span>"];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const shiftTable = document.getElementById("shiftTable");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>days.forEach(day =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>let tr = document.createElement("tr");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>let tdDay = document.createElement("td");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>tdDay.innerText = day;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>tr.appendChild(tdDay);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>times.forEach(time =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let td = document.createElement("td");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>td.id = `shift-${day}-${time}`;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>td.className = "btn-none";</p>
-<p class="p1"><span class="Apple-converted-space">        </span>td.innerText = "<span class="s1">未定</span>";</p>
-<p class="p1"><span class="Apple-converted-space">        </span>td.onclick = () =&gt; toggleShift(day, time);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>tr.appendChild(td);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>shiftTable.appendChild(tr);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p2"><br></p>
-<p class="p3"><span class="s3"><span class="Apple-converted-space">    </span>// 3. </span>シフト変更をデータベースに保存</p>
-<p class="p1"><span class="Apple-converted-space">    </span>async function toggleShift(day, time) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const docRef = db.collection("shifts").doc(`${day}-${time}`);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const currentText = document.getElementById(`shift-${day}-${time}`).innerText;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>let nextUser = currentText === "<span class="s1">未定</span>" ? "<span class="s1">あや</span>" : (currentText === "<span class="s1">あや</span>" ? "<span class="s1">けんじさん</span>" : "<span class="s1">未定</span>");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>await docRef.set({ user: nextUser });</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p3"><span class="s3"><span class="Apple-converted-space">    </span>// 4. </span>データベースの変更を自動で画面に反映（リアルタイム同期）</p>
-<p class="p1"><span class="Apple-converted-space">    </span>db.collection("shifts").onSnapshot(snapshot =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>snapshot.docChanges().forEach(change =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const docId = change.doc.id;<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const data = change.doc.data();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const element = document.getElementById(`shift-${docId}`);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(element) {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>element.innerText = data.user;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>element.className = data.user === "<span class="s1">あや</span>" ? "btn-aya" : (data.user === "<span class="s1">けんじさん</span>" ? "btn-kenji" : "btn-none");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>});</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// 5. <span class="s1">チャット機能</span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const chatBox = document.getElementById("chatBox");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const chatInput = document.getElementById("chatInput");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>async function sendMessage() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const text = chatInput.value.trim();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(!text) return;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const sender = document.getElementById("userSelect").value;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>await db.collection("chats").add({</p>
-<p class="p1"><span class="Apple-converted-space">        </span>text: text,</p>
-<p class="p1"><span class="Apple-converted-space">        </span>sender: sender,</p>
-<p class="p1"><span class="Apple-converted-space">        </span>timestamp: firebase.firestore.FieldValue.serverTimestamp()</p>
-<p class="p1"><span class="Apple-converted-space">      </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>chatInput.value = "";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>db.collection("chats").orderBy("timestamp").onSnapshot(snapshot =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>chatBox.innerHTML = "";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>snapshot.forEach(doc =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const data = doc.data();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(data.text) {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const wrapper = document.createElement("div");</p>
-<p class="p1"><span class="Apple-converted-space">          </span>wrapper.className = "msg-wrapper";</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const div = document.createElement("div");</p>
-<p class="p1"><span class="Apple-converted-space">          </span>div.className = `msg ${data.sender === "<span class="s1">あや</span>" ? "aya" : "kenji"}`;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>div.innerText = `${data.sender}: ${data.text}`;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>wrapper.appendChild(div);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>chatBox.appendChild(wrapper);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>chatBox.scrollTop = chatBox.scrollHeight;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+
+  <header>🌸 あかりちゃん 送迎アプリ</header>
+
+  <div class="container">
+    <div class="card">
+      <label style="font-weight: bold;">👤 あなたはどっち？:</label>
+      <select id="userSelect">
+        <option value="あや">あや</option>
+        <option value="けんじさん">けんじさん</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h2>📅 今週のシフト (月〜金)</h2>
+      <p style="font-size:12px; color:#666;">タップすると担当が変わります<br>（あや ⇄ けんじさん ⇄ 未定）</p>
+      <table id="shiftTable">
+        <tr><th>曜日</th><th>朝 (送り)</th><th>夕 (迎え)</th></tr>
+        </table>
+    </div>
+
+    <div class="card">
+      <h2>💬 連絡チャット</h2>
+      <div id="chatBox" class="chat-box"></div>
+      <input type="text" id="chatInput" placeholder="メッセージを入力...">
+      <button class="btn btn-aya" onclick="sendMessage()" style="background: #4CAF50;">送信する</button>
+    </div>
+  </div>
+
+  <script>
+    // 1. いただいた鍵でFirebaseに接続
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiTWsBZSTEAt_xM_SU9yu7QOAAh_c9Cns",
+      authDomain: "okurimukae-8a08e.firebaseapp.com",
+      projectId: "okurimukae-8a08e",
+      storageBucket: "okurimukae-8a08e.firebasestorage.app",
+      messagingSenderId: "460205449169",
+      appId: "1:460205449169:web:325d073bdbdc84b0134af0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 2. シフト表を作る
+    const days = ["月", "火", "水", "木", "金"];
+    const times = ["朝", "夕"];
+    const shiftTable = document.getElementById("shiftTable");
+
+    days.forEach(day => {
+      let tr = document.createElement("tr");
+      let tdDay = document.createElement("td");
+      tdDay.innerText = day;
+      tr.appendChild(tdDay);
+
+      times.forEach(time => {
+        let td = document.createElement("td");
+        td.id = `shift-${day}-${time}`;
+        td.className = "btn-none";
+        td.innerText = "未定";
+        td.onclick = () => toggleShift(day, time);
+        tr.appendChild(td);
+      });
+      shiftTable.appendChild(tr);
+    });
+
+    // 3. シフト変更をデータベースに保存
+    async function toggleShift(day, time) {
+      const docRef = db.collection("shifts").doc(`${day}-${time}`);
+      const currentText = document.getElementById(`shift-${day}-${time}`).innerText;
+      let nextUser = currentText === "未定" ? "あや" : (currentText === "あや" ? "けんじさん" : "未定");
+      await docRef.set({ user: nextUser });
+    }
+
+    // 4. データベースの変更を自動で画面に反映（リアルタイム同期）
+    db.collection("shifts").onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(change => {
+        const docId = change.doc.id; 
+        const data = change.doc.data();
+        const element = document.getElementById(`shift-${docId}`);
+        if(element) {
+          element.innerText = data.user;
+          element.className = data.user === "あや" ? "btn-aya" : (data.user === "けんじさん" ? "btn-kenji" : "btn-none");
+        }
+      });
+    });
+
+    // 5. チャット機能
+    const chatBox = document.getElementById("chatBox");
+    const chatInput = document.getElementById("chatInput");
+
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if(!text) return;
+      const sender = document.getElementById("userSelect").value;
+      await db.collection("chats").add({
+        text: text,
+        sender: sender,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      chatInput.value = "";
+    }
+
+    db.collection("chats").orderBy("timestamp").onSnapshot(snapshot => {
+      chatBox.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if(data.text) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "msg-wrapper";
+          const div = document.createElement("div");
+          div.className = `msg ${data.sender === "あや" ? "aya" : "kenji"}`;
+          div.innerText = `${data.sender}: ${data.text}`;
+          wrapper.appendChild(div);
+          chatBox.appendChild(wrapper);
+        }
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+  </script>
 </body>
 </html>
