@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>おくりむかえ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #f0f4f8; color: #1a202c; max-width: 430px; margin: 0 auto; min-height: 100vh; position: relative; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #4f7df3, #667eea); color: white; padding: 16px 20px 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(79,125,243,0.3); }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+  .header-sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; }
+
+  /* Tab bar */
+  .tab-bar { display: flex; background: white; border-bottom: 1px solid #e2e8f0; }
+  .tab-item { flex: 1; padding: 12px 4px; text-align: center; cursor: pointer; font-size: 11px; color: #718096; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .tab-item.active { color: #4f7df3; border-bottom-color: #4f7df3; font-weight: 600; }
+  .tab-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+  /* Pages */
+  .page { display: none; padding: 16px; padding-bottom: 80px; }
+  .page.active { display: block; }
+
+  /* Cards */
+  .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .card-title { font-size: 13px; font-weight: 600; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+  /* Schedule Page */
+  .date-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .date-nav h2 { font-size: 17px; font-weight: 700; }
+  .date-btn { width: 36px; height: 36px; border: none; background: white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.1); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+
+  .week-strip { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .week-strip::-webkit-scrollbar { display: none; }
+  .day-chip { min-width: 52px; text-align: center; padding: 8px 4px; border-radius: 12px; cursor: pointer; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .day-chip.today { background: #4f7df3; color: white; }
+  .day-chip.selected { background: #ebf0ff; color: #4f7df3; font-weight: 600; }
+  .day-chip .day-name { font-size: 11px; color: inherit; opacity: 0.7; }
+  .day-chip .day-num { font-size: 18px; font-weight: 700; }
+  .day-chip.today .day-name { opacity: 0.9; }
+
+  .schedule-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f4f8; }
+  .schedule-item:last-child { border-bottom: none; }
+  .time-badge { min-width: 54px; text-align: center; }
+  .time-badge .time { font-size: 15px; font-weight: 700; color: #4f7df3; }
+  .time-badge .type { font-size: 10px; color: #a0aec0; margin-top: 1px; }
+  .schedule-info { flex: 1; }
+  .schedule-child { font-size: 15px; font-weight: 600; }
+  .schedule-place { font-size: 12px; color: #718096; margin-top: 2px; }
+  .driver-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+  .driver-me { background: #e6fffa; color: #38a169; }
+  .driver-other { background: #ebf0ff; color: #4f7df3; }
+  .driver-none { background: #fff3cd; color: #d69e2e; }
+
+  .empty-state { text-align: center; padding: 32px 0; color: #a0aec0; }
+  .empty-state .emoji { font-size: 40px; margin-bottom: 8px; }
+
+  /* Shift Page */
+  .shift-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .week-label { font-size: 16px; font-weight: 700; }
+  .shift-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .shift-table th { padding: 8px 4px; text-align: center; color: #718096; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+  .shift-table td { padding: 8px 4px; text-align: center; border-bottom: 1px solid #f0f4f8; }
+  .shift-cell { padding: 5px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-block; min-width: 44px; }
+  .shift-me { background: #e6fffa; color: #38a169; }
+  .shift-other { background: #ebf0ff; color: #4f7df3; }
+  .shift-none { background: #f7fafc; color: #a0aec0; }
+  .change-btn { margin-top: 12px; width: 100%; padding: 12px; background: white; border: 2px solid #4f7df3; color: #4f7df3; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .change-btn:hover { background: #ebf0ff; }
+
+  /* Chat Page */
+  .chat-list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f4f8; cursor: pointer; }
+  .chat-list-item:last-child { border-bottom: none; }
+  .chat-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .chat-group { background: linear-gradient(135deg, #4f7df3, #667eea); }
+  .chat-person1 { background: #fef3c7; }
+  .chat-person2 { background: #e0f2fe; }
+  .chat-person3 { background: #fce7f3; }
+  .chat-info { flex: 1; min-width: 0; }
+  .chat-name { font-size: 15px; font-weight: 600; }
+  .chat-preview { font-size: 13px; color: #718096; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-meta { text-align: right; flex-shrink: 0; }
+  .chat-time { font-size: 11px; color: #a0aec0; }
+  .chat-badge { background: #4f7df3; color: white; border-radius: 10px; font-size: 11px; font-weight: 700; padding: 2px 7px; margin-top: 4px; display: inline-block; }
+
+  /* Chat Room */
+  .chat-room { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #f0f4f8; z-index: 200; max-width: 430px; margin: 0 auto; flex-direction: column; }
+  .chat-room.open { display: flex; }
+  .chat-room-header { background: linear-gradient(135deg, #4f7df3, #667eea); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+  .back-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0 8px 0 0; }
+  .chat-room-title { font-size: 16px; font-weight: 700; flex: 1; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 78%; }
+  .msg.me { align-self: flex-end; }
+  .msg.other { align-self: flex-start; }
+  .msg-name { font-size: 11px; color: #718096; margin-bottom: 3px; padding-left: 2px; }
+  .msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; }
+  .msg.me .msg-bubble { background: #4f7df3; color: white; border-bottom-right-radius: 4px; }
+  .msg.other .msg-bubble { background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-bottom-left-radius: 4px; }
+  .msg-time { font-size: 10px; color: #a0aec0; margin-top: 3px; text-align: right; }
+  .msg.other .msg-time { text-align: left; padding-left: 2px; }
+  .chat-input-area { padding: 12px 16px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .chat-input { flex: 1; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 24px; font-size: 14px; outline: none; font-family: inherit; }
+  .chat-input:focus { border-color: #4f7df3; }
+  .send-btn { width: 40px; height: 40px; background: #4f7df3; border: none; border-radius: 50%; color: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* Notice */
+  .notice-card { background: linear-gradient(135deg, #fff3cd, #fef9e7); border: 1px solid #f6d860; border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start; }
+  .notice-icon { font-size: 20px; flex-shrink: 0; }
+  .notice-text { font-size: 13px; line-height: 1.5; }
+  .notice-title { font-weight: 700; margin-bottom: 2px; }
+
+  /* Bottom nav */
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1px solid #e2e8f0; display: flex; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 16px rgba(0,0,0,0.08); z-index: 100; }
+  .nav-item { flex: 1; padding: 10px 4px 6px; text-align: center; cursor: pointer; color: #a0aec0; transition: color 0.2s; }
+  .nav-item.active { color: #4f7df3; }
+  .nav-icon { font-size: 22px; display: block; }
+  .nav-label { font-size: 10px; font-weight: 500; margin-top: 2px; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 24px 24px 0 0; padding: 24px 20px; width: 100%; max-width: 430px; }
+  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+  .modal-btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 8px; border: none; }
+  .modal-primary { background: #4f7df3; color: white; }
+  .modal-cancel { background: #f0f4f8; color: #718096; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>🚗 おくりむかえ</h1>
+      <div class="header-sub">さくら保育園グループ</div>
+    </div>
+    <div class="avatar">A</div>
+  </div>
+</div>
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <div class="tab-item active" onclick="showPage('schedule', this)">
+    <span class="tab-icon">📅</span>スケジュール
+  </div>
+  <div class="tab-item" onclick="showPage('shift', this)">
+    <span class="tab-icon">🔄</span>シフト
+  </div>
+  <div class="tab-item" onclick="showPage('chat', this)">
+    <span class="tab-icon">💬</span>チャット
+  </div>
+</div>
+
+<!-- ===== SCHEDULE PAGE ===== -->
+<div id="page-schedule" class="page active">
+
+  <!-- Notice -->
+  <div class="notice-card">
+    <div class="notice-icon">⚠️</div>
+    <div class="notice-text">
+      <div class="notice-title">担当未定の予定があります</div>
+      木曜日の夕方お迎えの担当が決まっていません
+    </div>
+  </div>
+
+  <!-- Week strip -->
+  <div class="card">
+    <div class="date-nav">
+      <button class="date-btn" onclick="changeWeek(-1)">‹</button>
+      <h2 id="week-label">4月第2週</h2>
+      <button class="date-btn" onclick="changeWeek(1)">›</button>
+    </div>
+    <div class="week-strip" id="week-strip"></div>
+  </div>
+
+  <!-- Today's schedule -->
+  <div class="card">
+    <div class="card-title" id="selected-date-label">今日のスケジュール</div>
+    <div id="schedule-list"></div>
+  </div>
+</div>
+
+<!-- ===== SHIFT PAGE ===== -->
+<div id="page-shift" class="page">
+  <div class="card">
+    <div class="shift-header">
+      <div class="week-label">4月7日（月）〜 13日（日）</div>
+    </div>
+    <table class="shift-table">
+      <thead>
+        <tr>
+          <th>曜日</th>
+          <th>朝 送り</th>
+          <th>夕 迎え</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>月</strong></td>
+          <td><span class="shift-cell shift-me">あなた</span></td>
+          <td><span class="shift-cell shift-other">田中さん</span></td>
+        </tr>
+        <tr>
+          <td><strong>火</strong></td>
+          <td><span class="shift-cell shift-other">山田さん</span></td>
+          <td><span class="shift-cell shift-me">あなた</span></td>
+        </tr>
+        <tr>
+          <td><strong>水</strong></td>
+          <td><span class="shift-cell shift-other">田中さん</span></td>
+          <td><span class="shift-cell shift-other">山田さん</span></td>
+        </tr>
+        <tr>
+          <td><strong>木</strong></td>
+          <td><span class="shift-cell shift-me">あなた</span></td>
+          <td><span class="shift-cell shift-none">未定 ⚠️</span></td>
+        </tr>
+        <tr>
+          <td><strong>金</strong></td>
+          <td><span class="shift-cell shift-other">山田さん</span></td>
+          <td><span class="shift-cell shift-me">あなた</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="change-btn" onclick="openModal()">🔄 担当変更をリクエスト</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">メンバー</div>
+    <div class="schedule-item">
+      <div style="width:40px;height:40px;border-radius:50%;background:#e0f2fe;display:flex;align-items:center;justify-content:center;font-size:18px;">👩</div>
+      <div class="schedule-info">
+        <div class="schedule-child">あなた（AYAさん）</div>
+        <div class="schedule-place">担当：はなこ・たろう</div>
+      </div>
+      <span class="driver-badge driver-me">自分</span>
+    </div>
+    <div class="schedule-item">
+      <div style="width:40px;height:40px;border-radius:50%;background:#fce7f3;display:flex;align-items:center;justify-content:function:center;display:flex;align-items:center;justify-content:center;font-size:18px;">👩</div>
+      <div class="schedule-info">
+        <div class="schedule-child">田中さやかさん</div>
+        <div class="schedule-place">担当：けんた</div>
+      </div>
+      <span class="driver-badge driver-other">メンバー</span>
+    </div>
+    <div class="schedule-item">
+      <div style="width:40px;height:40px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:18px;">👨</div>
+      <div class="schedule-info">
+        <div class="schedule-child">山田こうじさん</div>
+        <div class="schedule-place">担当：みさき</div>
+      </div>
+      <span class="driver-badge driver-other">メンバー</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CHAT PAGE ===== -->
+<div id="page-chat" class="page">
+  <div class="card">
+    <div class="card-title">チャット</div>
+    <div class="chat-list-item" onclick="openChat('group')">
+      <div class="chat-avatar chat-group" style="font-size:18px;">🚗</div>
+      <div class="chat-info">
+        <div class="chat-name">さくら保育園グループ</div>
+        <div class="chat-preview">田中さん：木曜日の迎えですが…</div>
+      </div>
+      <div class="chat-meta">
+        <div class="chat-time">14:32</div>
+        <div class="chat-badge">3</div>
+      </div>
+    </div>
+    <div class="chat-list-item" onclick="openChat('tanaka')">
+      <div class="chat-avatar chat-person1">👩</div>
+      <div class="chat-info">
+        <div class="chat-name">田中さやかさん</div>
+        <div class="chat-preview">了解しました！よろしくお願いします</div>
+      </div>
+      <div class="chat-meta">
+        <div class="chat-time">昨日</div>
+      </div>
+    </div>
+    <div class="chat-list-item" onclick="openChat('yamada')">
+      <div class="chat-avatar chat-person2">👨</div>
+      <div class="chat-info">
+        <div class="chat-name">山田こうじさん</div>
+        <div class="chat-preview">来週のシフトについて確認したいです</div>
+      </div>
+      <div class="chat-meta">
+        <div class="chat-time">月曜</div>
+        <div class="chat-badge">1</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-schedule" onclick="showPage('schedule', null, 'nav-schedule')">
+    <span class="nav-icon">📅</span>
+    <span class="nav-label">スケジュール</span>
+  </div>
+  <div class="nav-item" id="nav-shift" onclick="showPage('shift', null, 'nav-shift')">
+    <span class="nav-icon">🔄</span>
+    <span class="nav-label">シフト</span>
+  </div>
+  <div class="nav-item" id="nav-chat" onclick="showPage('chat', null, 'nav-chat')">
+    <span class="nav-icon">💬</span>
+    <span class="nav-label">チャット</span>
+  </div>
+</div>
+
+<!-- Chat Room Overlay -->
+<div class="chat-room" id="chat-room">
+  <div class="chat-room-header">
+    <button class="back-btn" onclick="closeChat()">‹</button>
+    <div class="chat-room-title" id="chat-room-title"></div>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-area">
+    <input class="chat-input" id="chat-input" type="text" placeholder="メッセージを入力…" onkeydown="if(event.key==='Enter')sendMessage()">
+    <button class="send-btn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<!-- Change request modal -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <h3>🔄 担当変更リクエスト</h3>
+    <p style="font-size:14px;color:#718096;margin-bottom:16px;">変更したい日程を選んでリクエストを送れます</p>
+    <button class="modal-btn modal-primary" onclick="closeModal();alert('田中さんにリクエストを送りました！')">田中さんにリクエスト送信</button>
+    <button class="modal-btn modal-primary" onclick="closeModal();alert('山田さんにリクエストを送りました！')">山田さんにリクエスト送信</button>
+    <button class="modal-btn modal-cancel" onclick="closeModal()">キャンセル</button>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const today = new Date(2026, 3, 10); // April 10, 2026
+let selectedDate = new Date(today);
+
+const scheduleData = {
+  '2026-04-07': [
+    { time: '07:45', type: '朝 送り', child: 'はなこ', place: 'さくら保育園', driver: 'me' },
+    { time: '17:30', type: '夕 迎え', child: 'けんた', place: 'さくら保育園', driver: 'other', driverName: '田中さん' }
+  ],
+  '2026-04-08': [
+    { time: '07:45', type: '朝 送り', child: 'みさき', place: 'さくら保育園', driver: 'other', driverName: '山田さん' },
+    { time: '17:30', type: '夕 迎え', child: 'はなこ', place: 'さくら保育園', driver: 'me' }
+  ],
+  '2026-04-09': [
+    { time: '07:45', type: '朝 送り', child: 'けんた', place: 'さくら保育園', driver: 'other', driverName: '田中さん' },
+    { time: '17:30', type: '夕 迎え', child: 'みさき', place: 'さくら保育園', driver: 'other', driverName: '山田さん' }
+  ],
+  '2026-04-10': [
+    { time: '07:45', type: '朝 送り', child: 'はなこ', place: 'さくら保育園', driver: 'me' },
+    { time: '17:30', type: '夕 迎え', child: 'けんた', place: 'さくら保育園', driver: 'other', driverName: '田中さん' }
+  ],
+  '2026-04-11': [
+    { time: '07:45', type: '朝 送り', child: 'みさき', place: 'さくら保育園', driver: 'me' },
+    { time: '17:30', type: '夕 迎え', child: 'はなこ', place: 'さくら保育園', driver: 'none' }
+  ],
+  '2026-04-12': [
+    { time: '07:45', type: '朝 送り', child: 'けんた', place: 'さくら保育園', driver: 'other', driverName: '山田さん' },
+    { time: '17:30', type: '夕 迎え', child: 'みさき', place: 'さくら保育園', driver: 'me' }
+  ]
+};
+
+const chatData = {
+  group: {
+    title: '🚗 さくら保育園グループ',
+    messages: [
+      { from: 'other', name: '田中さやか', text: 'みなさんおはようございます！', time: '08:10' },
+      { from: 'me', name: 'あなた', text: 'おはようございます！今日もよろしくです🙏', time: '08:15' },
+      { from: 'other', name: '山田こうじ', text: '木曜日の夕方なのですが、急な用事が入ってしまいまして…', time: '13:20' },
+      { from: 'other', name: '田中さやか', text: '木曜日の迎えですが、どなたか代わっていただけますか？', time: '14:30' },
+      { from: 'other', name: '山田こうじ', text: 'ご迷惑おかけしてすみません🙏', time: '14:32' }
+    ]
+  },
+  tanaka: {
+    title: '👩 田中さやかさん',
+    messages: [
+      { from: 'me', name: 'あなた', text: '来週月曜の朝、お願いできますか？', time: '昨日 15:00' },
+      { from: 'other', name: '田中さやか', text: '了解しました！よろしくお願いします', time: '昨日 15:30' }
+    ]
+  },
+  yamada: {
+    title: '👨 山田こうじさん',
+    messages: [
+      { from: 'other', name: '山田こうじ', text: '来週のシフトについて確認したいです', time: '月曜 10:00' }
+    ]
+  }
+};
+
+let currentChat = null;
+
+// ===== WEEK STRIP =====
+const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+function getWeekDates(baseDate) {
+  const dates = [];
+  const day = baseDate.getDay();
+  const monday = new Date(baseDate);
+  monday.setDate(baseDate.getDate() - (day === 0 ? 6 : day - 1));
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    dates.push(d);
+  }
+  return dates;
+}
+
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function renderWeekStrip() {
+  const strip = document.getElementById('week-strip');
+  const weekDates = getWeekDates(selectedDate);
+  strip.innerHTML = '';
+  weekDates.forEach(d => {
+    const chip = document.createElement('div');
+    chip.className = 'day-chip';
+    if (isSameDay(d, today)) chip.classList.add('today');
+    if (isSameDay(d, selectedDate)) chip.classList.add('selected');
+    chip.innerHTML = `<div class="day-name">${dayNames[d.getDay()]}</div><div class="day-num">${d.getDate()}</div>`;
+    chip.onclick = () => { selectedDate = new Date(d); renderWeekStrip(); renderSchedule(); };
+    strip.appendChild(chip);
+  });
+
+  // week label
+  const weekDates2 = getWeekDates(selectedDate);
+  const m = weekDates2[0].getMonth()+1;
+  const weekNum = Math.ceil(weekDates2[0].getDate() / 7);
+  document.getElementById('week-label').textContent = `${m}月第${weekNum}週`;
+}
+
+function renderSchedule() {
+  const list = document.getElementById('schedule-list');
+  const label = document.getElementById('selected-date-label');
+  const key = dateKey(selectedDate);
+
+  if (isSameDay(selectedDate, today)) {
+    label.textContent = '今日のスケジュール';
+  } else {
+    label.textContent = `${selectedDate.getMonth()+1}月${selectedDate.getDate()}日のスケジュール`;
+  }
+
+  const items = scheduleData[key] || [];
+  if (items.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="emoji">🎉</div><div>この日の予定はありません</div></div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(item => {
+    let badge = '';
+    if (item.driver === 'me') badge = `<span class="driver-badge driver-me">あなた</span>`;
+    else if (item.driver === 'other') badge = `<span class="driver-badge driver-other">${item.driverName}</span>`;
+    else badge = `<span class="driver-badge driver-none">未担当 ⚠️</span>`;
+
+    return `<div class="schedule-item">
+      <div class="time-badge">
+        <div class="time">${item.time}</div>
+        <div class="type">${item.type}</div>
+      </div>
+      <div class="schedule-info">
+        <div class="schedule-child">${item.child}ちゃん</div>
+        <div class="schedule-place">📍 ${item.place}</div>
+      </div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+function changeWeek(dir) {
+  selectedDate.setDate(selectedDate.getDate() + dir * 7);
+  renderWeekStrip();
+  renderSchedule();
+}
+
+// ===== PAGE SWITCH =====
+function showPage(name, tabEl, navId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  document.getElementById('page-' + name).classList.add('active');
+
+  if (tabEl) tabEl.classList.add('active');
+
+  // sync nav
+  const navMap = { schedule: 'nav-schedule', shift: 'nav-shift', chat: 'nav-chat' };
+  const navTarget = navId || navMap[name];
+  if (navTarget) document.getElementById(navTarget).classList.add('active');
+
+  // sync tab
+  const tabMap = { schedule: 0, shift: 1, chat: 2 };
+  if (!tabEl) {
+    document.querySelectorAll('.tab-item')[tabMap[name]].classList.add('active');
+  }
+}
+
+// ===== CHAT =====
+function openChat(id) {
+  currentChat = id;
+  const data = chatData[id];
+  document.getElementById('chat-room-title').textContent = data.title;
+
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = data.messages.map(m => `
+    <div class="msg ${m.from}">
+      ${m.from === 'other' ? `<div class="msg-name">${m.name}</div>` : ''}
+      <div class="msg-bubble">${m.text}</div>
+      <div class="msg-time">${m.time}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('chat-room').classList.add('open');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function closeChat() {
+  document.getElementById('chat-room').classList.remove('open');
+  currentChat = null;
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !currentChat) return;
+
+  const now = new Date();
+  const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  chatData[currentChat].messages.push({ from: 'me', name: 'あなた', text, time });
+
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg me';
+  div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${time}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  input.value = '';
+
+  // Auto reply
+  setTimeout(() => {
+    const replies = ['了解です！', 'ありがとうございます🙏', 'よろしくお願いします！', 'わかりました！'];
+    const reply = replies[Math.floor(Math.random() * replies.length)];
+    const names = { group: '田中さやか', tanaka: '田中さやか', yamada: '山田こうじ' };
+    chatData[currentChat].messages.push({ from: 'other', name: names[currentChat], text: reply, time });
+
+    const div2 = document.createElement('div');
+    div2.className = 'msg other';
+    div2.innerHTML = `<div class="msg-name">${names[currentChat]}</div><div class="msg-bubble">${reply}</div><div class="msg-time">${time}</div>`;
+    msgs.appendChild(div2);
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 1200);
+}
+
+// ===== MODAL =====
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal') || e.currentTarget !== document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+// ===== INIT =====
+renderWeekStrip();
+renderSchedule();
+</script>
+</body>
+</html>
