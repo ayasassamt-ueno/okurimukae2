@@ -68,7 +68,7 @@
       <label style="font-weight: bold;">👤 あなたはどっち？:</label>
       <select id="userSelect">
         <option value="あや">あや</option>
-        <option value="けんじさん">けんじさん</option>
+        <option value="けんじ">けんじ</option>
       </select>
     </div>
 
@@ -86,7 +86,7 @@
         <span class="week-label" id="weekLabel"></span>
         <button id="nextWeek" onclick="changeWeek(1)">›</button>
       </div>
-      <p style="font-size:12px; color:#666; margin: 8px 0;">タップすると担当が変わります<br>（あや ⇄ けんじさん ⇄ 未定）<br>🎌 祝日は自動でお休みになります</p>
+      <p style="font-size:12px; color:#666; margin: 8px 0;">タップすると担当が変わります<br>（あや ⇄ けんじ ⇄ 未定）<br>🎌 祝日は自動でお休みになります</p>
       <table id="shiftTable">
         <tr><th>曜日</th><th>朝 (送り)</th><th>夕 (迎え)</th></tr>
       </table>
@@ -255,7 +255,7 @@
       const docRef = db.collection("shifts").doc(`${dateKey}-${time}`);
       const element = document.getElementById(`shift-${dateKey}-${time}`);
       const currentText = element.innerText;
-      let nextUser = currentText === "未定" ? "あや" : (currentText === "あや" ? "けんじさん" : "未定");
+      let nextUser = currentText === "未定" ? "あや" : (currentText === "あや" ? "けんじ" : "未定");
       await docRef.set({ user: nextUser });
     }
 
@@ -275,7 +275,7 @@
         const el = document.getElementById(`shift-${docId}`);
         if (el && !el.className.includes('btn-holiday')) {
           el.innerText = user;
-          el.className = user === "あや" ? "btn-aya" : (user === "けんじさん" ? "btn-kenji" : "btn-none");
+          el.className = user === "あや" ? "btn-aya" : (user === "けんじ" ? "btn-kenji" : "btn-none");
           el.style.cursor = 'pointer';
         }
       });
@@ -303,7 +303,7 @@
       chatInput.value = "";
     }
 
-    chatInput.addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
+    chatInput.addEventListener('keydown', e => { if(e.key==='Enter' && !e.isComposing) sendMessage(); });
 
     db.collection("chats").orderBy("timestamp").onSnapshot(snapshot => {
       chatBox.innerHTML = "";
