@@ -1,628 +1,172 @@
-<!DOCTYPE html>
-<html lang="ja">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>おくりむかえ</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #f0f4f8; color: #1a202c; max-width: 430px; margin: 0 auto; min-height: 100vh; }
-
-  .header { background: linear-gradient(135deg, #4f7df3, #667eea); color: white; padding: 16px 20px 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(79,125,243,0.3); }
-  .header-top { display: flex; align-items: center; justify-content: space-between; }
-  .header h1 { font-size: 20px; font-weight: 700; }
-  .header-sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
-  .avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; }
-
-  .tab-bar { display: flex; background: white; border-bottom: 1px solid #e2e8f0; }
-  .tab-item { flex: 1; padding: 12px 4px; text-align: center; cursor: pointer; font-size: 11px; color: #718096; border-bottom: 3px solid transparent; transition: all 0.2s; }
-  .tab-item.active { color: #4f7df3; border-bottom-color: #4f7df3; font-weight: 600; }
-  .tab-icon { font-size: 20px; display: block; margin-bottom: 2px; }
-
-  .page { display: none; padding: 16px; padding-bottom: 90px; }
-  .page.active { display: block; }
-
-  .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  .card-title { font-size: 13px; font-weight: 600; color: #718096; letter-spacing: 0.5px; margin-bottom: 12px; }
-
-  /* Week strip — weekdays only */
-  .date-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .date-nav h2 { font-size: 17px; font-weight: 700; }
-  .date-btn { width: 36px; height: 36px; border: none; background: white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.1); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
-  .week-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-  .week-strip::-webkit-scrollbar { display: none; }
-  .day-chip { flex: 1; text-align: center; padding: 8px 4px; border-radius: 12px; cursor: pointer; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.08); min-width: 0; }
-  .day-chip.today { background: #4f7df3; color: white; }
-  .day-chip.selected { background: #ebf0ff; color: #4f7df3; font-weight: 600; }
-  .day-chip.today.selected { background: #4f7df3; color: white; }
-  .day-chip .day-name { font-size: 11px; opacity: 0.75; }
-  .day-chip .day-num { font-size: 17px; font-weight: 700; }
-
-  /* Schedule items — tappable */
-  .schedule-item { display: flex; align-items: center; gap: 12px; padding: 12px 8px; border-bottom: 1px solid #f0f4f8; cursor: pointer; border-radius: 10px; transition: background 0.15s; }
-  .schedule-item:last-child { border-bottom: none; }
-  .schedule-item:active { background: #f7fafc; }
-  .time-badge { min-width: 54px; text-align: center; }
-  .time-badge .time { font-size: 15px; font-weight: 700; color: #4f7df3; }
-  .time-badge .type { font-size: 10px; color: #a0aec0; margin-top: 1px; }
-  .schedule-info { flex: 1; }
-  .schedule-child { font-size: 15px; font-weight: 600; }
-  .schedule-place { font-size: 12px; color: #718096; margin-top: 2px; }
-  .driver-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
-  .driver-me    { background: #e6fffa; color: #38a169; }
-  .driver-other { background: #ebf0ff; color: #4f7df3; }
-  .driver-none  { background: #fff3cd; color: #d69e2e; }
-  .edit-arrow { color: #cbd5e0; font-size: 16px; flex-shrink: 0; }
-
-  .empty-state { text-align: center; padding: 32px 0; color: #a0aec0; }
-  .empty-state .emoji { font-size: 40px; margin-bottom: 8px; }
-
-  .add-schedule-btn { width: 100%; padding: 12px; border: 2px dashed #cbd5e0; border-radius: 12px; background: none; color: #718096; font-size: 14px; cursor: pointer; margin-top: 8px; }
-  .add-schedule-btn:hover { border-color: #4f7df3; color: #4f7df3; background: #ebf0ff; }
-
-  /* Shift table */
-  .shift-week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .shift-week-label { font-size: 15px; font-weight: 700; }
-  .shift-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .shift-table th { padding: 8px 4px; text-align: center; color: #718096; font-weight: 600; border-bottom: 2px solid #e2e8f0; font-size: 12px; }
-  .shift-table td { padding: 6px 4px; text-align: center; border-bottom: 1px solid #f0f4f8; }
-  .shift-table td:first-child { font-weight: 700; font-size: 13px; color: #4a5568; width: 36px; }
-  .shift-cell { padding: 6px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; display: inline-block; min-width: 68px; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; }
-  .shift-cell:active { transform: scale(0.95); }
-  .shift-me    { background: #e6fffa; color: #38a169; border-color: #9ae6b4; }
-  .shift-other { background: #ebf0ff; color: #4f7df3; border-color: #bee3f8; }
-  .shift-none  { background: #fff3cd; color: #d69e2e; border-color: #fbd38d; }
-  .edit-hint { font-size: 11px; color: #a0aec0; text-align: center; margin-top: 10px; }
-
-  .member-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f4f8; }
-  .member-item:last-child { border-bottom: none; }
-  .member-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-
-  /* Chat */
-  .chat-list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f4f8; cursor: pointer; }
-  .chat-list-item:last-child { border-bottom: none; }
-  .chat-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-  .chat-group { background: linear-gradient(135deg, #4f7df3, #667eea); }
-  .chat-person1 { background: #e0f2fe; }
-  .chat-info { flex: 1; min-width: 0; }
-  .chat-name { font-size: 15px; font-weight: 600; }
-  .chat-preview { font-size: 13px; color: #718096; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .chat-meta { text-align: right; flex-shrink: 0; }
-  .chat-time { font-size: 11px; color: #a0aec0; }
-  .chat-badge { background: #4f7df3; color: white; border-radius: 10px; font-size: 11px; font-weight: 700; padding: 2px 7px; margin-top: 4px; display: inline-block; }
-
-  .chat-room { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #f0f4f8; z-index: 200; max-width: 430px; margin: 0 auto; flex-direction: column; }
-  .chat-room.open { display: flex; }
-  .chat-room-header { background: linear-gradient(135deg, #4f7df3, #667eea); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
-  .back-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; }
-  .chat-room-title { font-size: 16px; font-weight: 700; flex: 1; }
-  .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-  .msg { max-width: 78%; }
-  .msg.me { align-self: flex-end; }
-  .msg.other { align-self: flex-start; }
-  .msg-name { font-size: 11px; color: #718096; margin-bottom: 3px; }
-  .msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; }
-  .msg.me .msg-bubble { background: #4f7df3; color: white; border-bottom-right-radius: 4px; }
-  .msg.other .msg-bubble { background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-bottom-left-radius: 4px; }
-  .msg-time { font-size: 10px; color: #a0aec0; margin-top: 3px; text-align: right; }
-  .msg.other .msg-time { text-align: left; }
-  .chat-input-area { padding: 12px 16px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
-  .chat-input { flex: 1; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 24px; font-size: 14px; outline: none; font-family: inherit; }
-  .chat-input:focus { border-color: #4f7df3; }
-  .send-btn { width: 40px; height: 40px; background: #4f7df3; border: none; border-radius: 50%; color: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-
-  .notice-card { background: linear-gradient(135deg, #fff3cd, #fef9e7); border: 1px solid #f6d860; border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start; }
-  .notice-icon { font-size: 20px; flex-shrink: 0; }
-  .notice-text { font-size: 13px; line-height: 1.5; }
-  .notice-title { font-weight: 700; margin-bottom: 2px; }
-
-  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1px solid #e2e8f0; display: flex; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 16px rgba(0,0,0,0.08); z-index: 100; }
-  .nav-item { flex: 1; padding: 10px 4px 6px; text-align: center; cursor: pointer; color: #a0aec0; transition: color 0.2s; }
-  .nav-item.active { color: #4f7df3; }
-  .nav-icon { font-size: 22px; display: block; }
-  .nav-label { font-size: 10px; font-weight: 500; margin-top: 2px; }
-
-  /* ===== MODALS ===== */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 400; align-items: flex-end; justify-content: center; }
-  .modal-overlay.open { display: flex; }
-  .modal-box { background: white; border-radius: 24px 24px 0 0; padding: 24px 20px 36px; width: 100%; max-width: 430px; }
-  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-  .modal-sub { font-size: 13px; color: #718096; margin-bottom: 18px; }
-
-  /* Picker */
-  .picker-options { display: flex; flex-direction: column; gap: 10px; }
-  .picker-btn { padding: 15px 16px; border-radius: 14px; border: 2px solid transparent; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; }
-  .picker-btn:active { transform: scale(0.98); }
-  .picker-aya    { background: #e6fffa; color: #38a169; border-color: #9ae6b4; }
-  .picker-kenji  { background: #ebf0ff; color: #4f7df3; border-color: #bee3f8; }
-  .picker-none   { background: #fff3cd; color: #d69e2e; border-color: #fbd38d; }
-  .picker-cancel { background: #f7fafc; color: #718096; border-color: #e2e8f0; margin-top: 4px; }
-  .picker-icon { font-size: 20px; }
-
-  /* Edit / Add form */
-  .form-group { margin-bottom: 14px; }
-  .form-label { font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px; display: block; }
-  .form-select, .form-input { width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; font-family: inherit; outline: none; background: white; }
-  .form-select:focus, .form-input:focus { border-color: #4f7df3; }
-  .form-row { display: flex; gap: 10px; }
-  .form-row .form-group { flex: 1; }
-  .submit-btn { width: 100%; padding: 14px; background: #4f7df3; color: white; border: none; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px; }
-  .submit-btn:active { background: #3a6fd8; }
-  .delete-btn { width: 100%; padding: 12px; background: #fff5f5; color: #e53e3e; border: 2px solid #fed7d7; border-radius: 14px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-  .cancel-link { display: block; text-align: center; margin-top: 12px; color: #718096; font-size: 14px; cursor: pointer; }
-</style>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.4">
+  <style type="text/css">
+    body {background-color: #ecf1f6}
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Hiragino Sans'}
+    span.s1 {font: 12.0px 'Hiragino Sans'}
+    span.s2 {font: 12.0px 'Apple Color Emoji'}
+    span.s3 {font: 12.0px Helvetica}
+  </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="header-top">
-    <div><h1>🚗 おくりむかえ</h1><div class="header-sub">あかりちゃんグループ</div></div>
-    <div class="avatar">あ</div>
-  </div>
-</div>
-
-<div class="tab-bar">
-  <div class="tab-item active" onclick="showPage('schedule',this)"><span class="tab-icon">📅</span>スケジュール</div>
-  <div class="tab-item" onclick="showPage('shift',this)"><span class="tab-icon">🔄</span>シフト</div>
-  <div class="tab-item" onclick="showPage('chat',this)"><span class="tab-icon">💬</span>チャット</div>
-</div>
-
-<!-- SCHEDULE PAGE -->
-<div id="page-schedule" class="page active">
-  <div id="notice-area"></div>
-  <div class="card">
-    <div class="date-nav">
-      <button class="date-btn" onclick="changeWeek(-1)">‹</button>
-      <h2 id="week-label"></h2>
-      <button class="date-btn" onclick="changeWeek(1)">›</button>
-    </div>
-    <div class="week-strip" id="week-strip"></div>
-  </div>
-  <div class="card">
-    <div class="card-title" id="date-label">今日のスケジュール</div>
-    <div id="schedule-list"></div>
-    <button class="add-schedule-btn" onclick="openAddModal()">＋ 予定を追加する</button>
-  </div>
-</div>
-
-<!-- SHIFT PAGE -->
-<div id="page-shift" class="page">
-  <div class="card">
-    <div class="shift-week-nav">
-      <button class="date-btn" onclick="changeShiftWeek(-1)">‹</button>
-      <div class="shift-week-label" id="shift-week-label"></div>
-      <button class="date-btn" onclick="changeShiftWeek(1)">›</button>
-    </div>
-    <table class="shift-table">
-      <thead><tr><th>曜日</th><th>☀️ 朝 送り</th><th>🌙 夕 迎え</th></tr></thead>
-      <tbody id="shift-tbody"></tbody>
-    </table>
-    <div class="edit-hint">✏️ セルをタップして担当を変更できます</div>
-  </div>
-  <div class="card">
-    <div class="card-title">メンバー</div>
-    <div class="member-item">
-      <div class="member-avatar" style="background:#e0f2fe;">👩</div>
-      <div style="flex:1"><div style="font-weight:600">あや（自分）</div><div style="font-size:12px;color:#718096;margin-top:2px">担当：あかり</div></div>
-      <span class="driver-badge driver-me">自分</span>
-    </div>
-    <div class="member-item">
-      <div class="member-avatar" style="background:#fef3c7;">👨</div>
-      <div style="flex:1"><div style="font-weight:600">けんじさん</div><div style="font-size:12px;color:#718096;margin-top:2px">担当：あかり</div></div>
-      <span class="driver-badge driver-other">メンバー</span>
-    </div>
-  </div>
-</div>
-
-<!-- CHAT PAGE -->
-<div id="page-chat" class="page">
-  <div class="card">
-    <div class="card-title">チャット</div>
-    <div class="chat-list-item" onclick="openChat('group')">
-      <div class="chat-avatar chat-group">🚗</div>
-      <div class="chat-info"><div class="chat-name">あかりちゃんグループ</div><div class="chat-preview">けんじさん：木曜日の迎えですが…</div></div>
-      <div class="chat-meta"><div class="chat-time">14:32</div><div class="chat-badge">2</div></div>
-    </div>
-    <div class="chat-list-item" onclick="openChat('kenji')">
-      <div class="chat-avatar chat-person1">👨</div>
-      <div class="chat-info"><div class="chat-name">けんじさん</div><div class="chat-preview">了解しました！よろしくお願いします</div></div>
-      <div class="chat-meta"><div class="chat-time">昨日</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- Bottom Nav -->
-<div class="bottom-nav">
-  <div class="nav-item active" id="nav-schedule" onclick="showPage('schedule',null,'nav-schedule')"><span class="nav-icon">📅</span><span class="nav-label">スケジュール</span></div>
-  <div class="nav-item" id="nav-shift" onclick="showPage('shift',null,'nav-shift')"><span class="nav-icon">🔄</span><span class="nav-label">シフト</span></div>
-  <div class="nav-item" id="nav-chat" onclick="showPage('chat',null,'nav-chat')"><span class="nav-icon">💬</span><span class="nav-label">チャット</span></div>
-</div>
-
-<!-- Chat Room -->
-<div class="chat-room" id="chat-room">
-  <div class="chat-room-header">
-    <button class="back-btn" onclick="closeChat()">‹</button>
-    <div class="chat-room-title" id="chat-room-title"></div>
-  </div>
-  <div class="chat-messages" id="chat-messages"></div>
-  <div class="chat-input-area">
-    <input class="chat-input" id="chat-input" type="text" placeholder="メッセージを入力…" onkeydown="if(event.key==='Enter')sendMessage()">
-    <button class="send-btn" onclick="sendMessage()">➤</button>
-  </div>
-</div>
-
-<!-- SHIFT PICKER -->
-<div class="modal-overlay" id="shift-picker" onclick="if(event.target===this)closePicker()">
-  <div class="modal-box">
-    <div class="modal-title">担当を選んでください</div>
-    <div class="modal-sub" id="picker-sub"></div>
-    <div class="picker-options">
-      <button class="picker-btn picker-aya"   onclick="assignShift('me')">   <span class="picker-icon">👩</span> あや</button>
-      <button class="picker-btn picker-kenji" onclick="assignShift('other')"><span class="picker-icon">👨</span> けんじさん</button>
-      <button class="picker-btn picker-none"  onclick="assignShift('none')"> <span class="picker-icon">⚠️</span> 未定にする</button>
-      <button class="picker-btn picker-cancel" onclick="closePicker()">キャンセル</button>
-    </div>
-  </div>
-</div>
-
-<!-- ADD SCHEDULE MODAL -->
-<div class="modal-overlay" id="add-modal" onclick="if(event.target===this)closeAddModal()">
-  <div class="modal-box">
-    <div class="modal-title">📅 予定を追加</div>
-    <div class="modal-sub" id="add-modal-date"></div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">時間</label><input class="form-input" type="time" id="add-time" value="07:45"></div>
-      <div class="form-group"><label class="form-label">種別</label>
-        <select class="form-select" id="add-type">
-          <option value="朝 送り">☀️ 朝 送り</option>
-          <option value="夕 迎え">🌙 夕 迎え</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group"><label class="form-label">場所</label><input class="form-input" type="text" id="add-place" value="保育園" placeholder="例：○○保育園"></div>
-    <div class="form-group"><label class="form-label">担当</label>
-      <select class="form-select" id="add-driver">
-        <option value="me">あや</option>
-        <option value="other">けんじさん</option>
-        <option value="none">未定</option>
-      </select>
-    </div>
-    <button class="submit-btn" onclick="submitAdd()">追加する</button>
-    <span class="cancel-link" onclick="closeAddModal()">キャンセル</span>
-  </div>
-</div>
-
-<!-- EDIT SCHEDULE MODAL -->
-<div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
-  <div class="modal-box">
-    <div class="modal-title">✏️ 予定を編集</div>
-    <div class="modal-sub" id="edit-modal-date"></div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">時間</label><input class="form-input" type="time" id="edit-time"></div>
-      <div class="form-group"><label class="form-label">種別</label>
-        <select class="form-select" id="edit-type">
-          <option value="朝 送り">☀️ 朝 送り</option>
-          <option value="夕 迎え">🌙 夕 迎え</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group"><label class="form-label">場所</label><input class="form-input" type="text" id="edit-place"></div>
-    <div class="form-group"><label class="form-label">担当</label>
-      <select class="form-select" id="edit-driver">
-        <option value="me">あや</option>
-        <option value="other">けんじさん</option>
-        <option value="none">未定</option>
-      </select>
-    </div>
-    <button class="submit-btn" onclick="submitEdit()">保存する</button>
-    <button class="delete-btn" onclick="deleteSchedule()">🗑 この予定を削除する</button>
-    <span class="cancel-link" onclick="closeEditModal()">キャンセル</span>
-  </div>
-</div>
-
-<script>
-// ===== HELPERS =====
-function pad(n){ return String(n).padStart(2,'0'); }
-function fmtKey(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
-function offset(d,days){ const r=new Date(d); r.setDate(r.getDate()+days); return r; }
-function isSameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
-function getMonday(d){ const r=new Date(d); const day=r.getDay(); r.setDate(r.getDate()-(day===0?6:day-1)); r.setHours(0,0,0,0); return r; }
-function isWeekend(d){ return d.getDay()===0||d.getDay()===6; }
-function nearestWeekday(d){
-  const r=new Date(d);
-  while(isWeekend(r)) r.setDate(r.getDate()+1);
-  return r;
-}
-
-// ===== STATE =====
-const today = new Date(); today.setHours(0,0,0,0);
-let selectedDate = nearestWeekday(new Date(today));
-let shiftBaseDate = new Date(today);
-let editTarget = null; // { dateKey, index }
-let pickerTarget = null;
-
-// ===== DEFAULT DATA =====
-function buildDefaults(){
-  const sched={};
-  // Populate weekdays around today
-  for(let i=-5;i<=10;i++){
-    const d=offset(today,i);
-    if(isWeekend(d)) continue;
-    const key=fmtKey(d);
-    const patterns=[
-      {time:'07:45',type:'朝 送り',child:'あかり',place:'保育園',driver:i%2===0?'me':'other',driverName:'けんじさん'},
-      {time:'17:30',type:'夕 迎え',child:'あかり',place:'保育園',driver:i%2===0?'other':'me',driverName:'けんじさん'}
-    ];
-    // Make one day have 'none' for demo
-    if(i===2) patterns[1].driver='none';
-    sched[key]=patterns;
-  }
-  return sched;
-}
-
-function buildDefaultShifts(){
-  const out={};
-  const monday=getMonday(today);
-  for(let w=-1;w<=3;w++){
-    for(let d=0;d<5;d++){ // weekdays only
-      const dt=offset(monday,w*7+d);
-      const key=fmtKey(dt);
-      out[key]={ morning:d%2===0?'me':'other', evening:d%2===0?'other':'me' };
-    }
-  }
-  return out;
-}
-
-function loadData(key,def){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):def; }catch(e){ return def; } }
-function saveData(key,val){ try{ localStorage.setItem(key,JSON.stringify(val)); }catch(e){} }
-
-let scheduleData = loadData('okurimukae_schedule', buildDefaults());
-let shiftData    = loadData('okurimukae_shifts',   buildDefaultShifts());
-
-const DAY_NAMES=['日','月','火','水','木','金','土'];
-const WEEKDAY_NAMES=['月','火','水','木','金'];
-
-// ===== WEEK STRIP (Mon–Fri only) =====
-function renderWeekStrip(){
-  const monday=getMonday(selectedDate);
-  const strip=document.getElementById('week-strip');
-  strip.innerHTML='';
-  for(let i=0;i<5;i++){
-    const d=offset(monday,i);
-    const chip=document.createElement('div');
-    chip.className='day-chip'+(isSameDay(d,today)?' today':'')+(isSameDay(d,selectedDate)?' selected':'');
-    chip.innerHTML=`<div class="day-name">${DAY_NAMES[d.getDay()]}</div><div class="day-num">${d.getDate()}</div>`;
-    chip.onclick=()=>{ selectedDate=new Date(d); renderWeekStrip(); renderSchedule(); };
-    strip.appendChild(chip);
-  }
-  const m=monday.getMonth()+1;
-  const wn=Math.ceil(monday.getDate()/7);
-  document.getElementById('week-label').textContent=`${m}月第${wn}週（平日）`;
-}
-
-// ===== SCHEDULE =====
-function renderSchedule(){
-  const key=fmtKey(selectedDate);
-  document.getElementById('date-label').textContent=
-    isSameDay(selectedDate,today)?'今日のスケジュール':
-    `${selectedDate.getMonth()+1}月${selectedDate.getDate()}日（${DAY_NAMES[selectedDate.getDay()]}）`;
-
-  // Notice
-  let hasUnassigned=Object.values(scheduleData).some(arr=>arr.some(x=>x.driver==='none'));
-  document.getElementById('notice-area').innerHTML=hasUnassigned?`
-    <div class="notice-card">
-      <div class="notice-icon">⚠️</div>
-      <div class="notice-text"><div class="notice-title">担当未定の予定があります</div>予定をタップして担当を設定してください</div>
-    </div>`:'' ;
-
-  const items=(scheduleData[key]||[]).slice().sort((a,b)=>a.time.localeCompare(b.time));
-  const list=document.getElementById('schedule-list');
-  if(items.length===0){
-    list.innerHTML=`<div class="empty-state"><div class="emoji">🎉</div><div>この日の予定はありません</div></div>`;
-    return;
-  }
-  list.innerHTML=items.map((item,i)=>{
-    const badge=item.driver==='me'
-      ?`<span class="driver-badge driver-me">あや</span>`
-      :item.driver==='other'
-        ?`<span class="driver-badge driver-other">${item.driverName||'けんじさん'}</span>`
-        :`<span class="driver-badge driver-none">未定 ⚠️</span>`;
-    return `<div class="schedule-item" onclick="openEditModal('${key}',${i})">
-      <div class="time-badge"><div class="time">${item.time}</div><div class="type">${item.type}</div></div>
-      <div class="schedule-info">
-        <div class="schedule-child">あかりちゃん</div>
-        <div class="schedule-place">📍 ${item.place}</div>
-      </div>
-      ${badge}
-      <span class="edit-arrow">›</span>
-    </div>`;
-  }).join('');
-}
-
-function changeWeek(dir){
-  const monday=getMonday(selectedDate);
-  const newMonday=offset(monday,dir*7);
-  selectedDate=new Date(newMonday);
-  renderWeekStrip(); renderSchedule();
-}
-
-// ===== ADD SCHEDULE =====
-function openAddModal(){
-  document.getElementById('add-modal-date').textContent=
-    `${selectedDate.getMonth()+1}月${selectedDate.getDate()}日（${DAY_NAMES[selectedDate.getDay()]}）`;
-  document.getElementById('add-modal').classList.add('open');
-}
-function closeAddModal(){ document.getElementById('add-modal').classList.remove('open'); }
-function submitAdd(){
-  const time=document.getElementById('add-time').value;
-  const type=document.getElementById('add-type').value;
-  const place=document.getElementById('add-place').value||'保育園';
-  const driver=document.getElementById('add-driver').value;
-  const key=fmtKey(selectedDate);
-  if(!scheduleData[key]) scheduleData[key]=[];
-  scheduleData[key].push({time,type,child:'あかり',place,driver,driverName:'けんじさん'});
-  saveData('okurimukae_schedule',scheduleData);
-  closeAddModal(); renderSchedule();
-}
-
-// ===== EDIT SCHEDULE =====
-function openEditModal(dateKey,index){
-  const item=scheduleData[dateKey][index];
-  editTarget={dateKey,index};
-  const d=new Date(dateKey);
-  document.getElementById('edit-modal-date').textContent=
-    `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）`;
-  document.getElementById('edit-time').value=item.time;
-  document.getElementById('edit-type').value=item.type;
-  document.getElementById('edit-place').value=item.place;
-  document.getElementById('edit-driver').value=item.driver;
-  document.getElementById('edit-modal').classList.add('open');
-}
-function closeEditModal(){ document.getElementById('edit-modal').classList.remove('open'); editTarget=null; }
-function submitEdit(){
-  if(!editTarget) return;
-  const {dateKey,index}=editTarget;
-  scheduleData[dateKey][index]={
-    ...scheduleData[dateKey][index],
-    time:document.getElementById('edit-time').value,
-    type:document.getElementById('edit-type').value,
-    place:document.getElementById('edit-place').value||'保育園',
-    driver:document.getElementById('edit-driver').value,
-    driverName:'けんじさん'
-  };
-  saveData('okurimukae_schedule',scheduleData);
-  closeEditModal(); renderSchedule();
-}
-function deleteSchedule(){
-  if(!editTarget) return;
-  if(!confirm('この予定を削除しますか？')) return;
-  const {dateKey,index}=editTarget;
-  scheduleData[dateKey].splice(index,1);
-  saveData('okurimukae_schedule',scheduleData);
-  closeEditModal(); renderSchedule();
-}
-
-// ===== SHIFT TABLE (weekdays only) =====
-function renderShiftTable(){
-  const monday=getMonday(shiftBaseDate);
-  const friday=offset(monday,4);
-  document.getElementById('shift-week-label').textContent=
-    `${monday.getMonth()+1}月${monday.getDate()}日〜${friday.getDate()}日`;
-
-  const tbody=document.getElementById('shift-tbody');
-  tbody.innerHTML='';
-  for(let i=0;i<5;i++){
-    const d=offset(monday,i);
-    const key=fmtKey(d);
-    const s=shiftData[key]||{morning:'none',evening:'none'};
-    const isToday=isSameDay(d,today);
-    const tr=document.createElement('tr');
-    if(isToday) tr.style.background='#f7f9ff';
-    tr.innerHTML=`
-      <td><strong>${DAY_NAMES[d.getDay()]}</strong>${isToday?'<br><span style="font-size:9px;color:#4f7df3">今日</span>':''}</td>
-      <td>${shiftCellHTML(s.morning,key,'morning')}</td>
-      <td>${shiftCellHTML(s.evening,key,'evening')}</td>`;
-    tbody.appendChild(tr);
-  }
-}
-
-function shiftCellHTML(val,dateKey,slot){
-  const cls=val==='me'?'shift-me':val==='other'?'shift-other':'shift-none';
-  const label=val==='me'?'👩 あや':val==='other'?'👨 けんじさん':'⚠️ 未定';
-  return `<span class="shift-cell ${cls}" onclick="openPicker('${dateKey}','${slot}')">${label}</span>`;
-}
-
-function changeShiftWeek(dir){
-  shiftBaseDate=offset(shiftBaseDate,dir*7);
-  renderShiftTable();
-}
-
-// ===== SHIFT PICKER =====
-function openPicker(dateKey,slot){
-  pickerTarget={dateKey,slot};
-  const d=new Date(dateKey);
-  const slotLabel=slot==='morning'?'朝の送り':'夕方の迎え';
-  document.getElementById('picker-sub').textContent=
-    `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）の${slotLabel}`;
-  document.getElementById('shift-picker').classList.add('open');
-}
-function closePicker(){ document.getElementById('shift-picker').classList.remove('open'); pickerTarget=null; }
-function assignShift(val){
-  if(!pickerTarget) return;
-  const {dateKey,slot}=pickerTarget;
-  if(!shiftData[dateKey]) shiftData[dateKey]={morning:'none',evening:'none'};
-  shiftData[dateKey][slot]=val;
-  saveData('okurimukae_shifts',shiftData);
-  closePicker(); renderShiftTable(); renderSchedule();
-}
-
-// ===== CHAT =====
-const chatData={
-  group:{title:'🚗 あかりちゃんグループ',messages:[
-    {from:'me',name:'あや',text:'おはようございます！今週もよろしくお願いします😊',time:'08:10'},
-    {from:'other',name:'けんじ',text:'よろしくお願いします！',time:'08:15'},
-    {from:'other',name:'けんじ',text:'木曜日の迎えですが、急な用事が入ってしまって…',time:'14:30'},
-    {from:'other',name:'けんじ',text:'ご迷惑おかけしてすみません🙏',time:'14:32'}
-  ]},
-  kenji:{title:'👨 けんじさん',messages:[
-    {from:'me',name:'あや',text:'来週月曜の朝、お願いできますか？',time:'昨日 15:00'},
-    {from:'other',name:'けんじ',text:'了解しました！よろしくお願いします',time:'昨日 15:30'}
-  ]}
-};
-let currentChat=null;
-
-function openChat(id){
-  currentChat=id;
-  const data=chatData[id];
-  document.getElementById('chat-room-title').textContent=data.title;
-  const msgs=document.getElementById('chat-messages');
-  msgs.innerHTML=data.messages.map(m=>`
-    <div class="msg ${m.from}">
-      ${m.from==='other'?`<div class="msg-name">${m.name}</div>`:''}
-      <div class="msg-bubble">${m.text}</div>
-      <div class="msg-time">${m.time}</div>
-    </div>`).join('');
-  document.getElementById('chat-room').classList.add('open');
-  msgs.scrollTop=msgs.scrollHeight;
-}
-function closeChat(){ document.getElementById('chat-room').classList.remove('open'); currentChat=null; }
-function sendMessage(){
-  const input=document.getElementById('chat-input');
-  const text=input.value.trim();
-  if(!text||!currentChat) return;
-  const now=new Date();
-  const time=`${now.getHours()}:${pad(now.getMinutes())}`;
-  const msgs=document.getElementById('chat-messages');
-  const div=document.createElement('div');
-  div.className='msg me';
-  div.innerHTML=`<div class="msg-bubble">${text}</div><div class="msg-time">${time}</div>`;
-  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight; input.value='';
-  setTimeout(()=>{
-    const r=['了解です！','ありがとうございます🙏','よろしくお願いします！','わかりました！'];
-    const reply=r[Math.floor(Math.random()*r.length)];
-    const d2=document.createElement('div');
-    d2.className='msg other';
-    d2.innerHTML=`<div class="msg-name">けんじ</div><div class="msg-bubble">${reply}</div><div class="msg-time">${time}</div>`;
-    msgs.appendChild(d2); msgs.scrollTop=msgs.scrollHeight;
-  },1200);
-}
-
-// ===== PAGE SWITCH =====
-function showPage(name,tabEl,navId){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  const tabMap={schedule:0,shift:1,chat:2};
-  if(tabEl) tabEl.classList.add('active');
-  else document.querySelectorAll('.tab-item')[tabMap[name]].classList.add('active');
-  document.getElementById(navId||{schedule:'nav-schedule',shift:'nav-shift',chat:'nav-chat'}[name]).classList.add('active');
-}
-
-// ===== INIT =====
-renderWeekStrip();
-renderSchedule();
-renderShiftTable();
-</script>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="ja"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;<span class="s1">あかりちゃん</span> <span class="s1">送迎アプリ</span>&lt;/title&gt;</p>
+<p class="p2"><span class="Apple-converted-space">  </span></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"&gt;&lt;/script&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f4f7f6; color: #333; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>header { background: #ff9a9e; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.container { padding: 15px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>h2 { margin-top: 0; font-size: 18px; color: #555; border-bottom: 2px solid #ff9a9e; padding-bottom: 5px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>table { width: 100%; border-collapse: collapse; margin-top: 10px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>th { background: #fef0f0; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 5px;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.btn-aya { background: #ff758c; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.btn-kenji { background: #4facfe; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.btn-none { background: #e0e0e0; color: #333; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.chat-box { height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #fafafa; border-radius: 5px;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.msg { margin-bottom: 10px; padding: 8px; border-radius: 5px; max-width: 80%; display: inline-block; clear: both; float: left; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.msg.aya { background: #ffe2e6; float: right; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.msg.kenji { background: #e2f3ff; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.msg-wrapper { overflow: hidden; width: 100%; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>input, select { padding: 10px; width: calc(100% - 22px); margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;header&gt;<span class="s2">🌸</span> <span class="s1">あかりちゃん</span> <span class="s1">送迎アプリ</span>&lt;/header&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="card"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;label style="font-weight: bold;"&gt;<span class="s2">👤</span> <span class="s1">あなたはどっち？</span>:&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;select id="userSelect"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;option value="<span class="s1">あや</span>"&gt;<span class="s1">あや</span>&lt;/option&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;option value="<span class="s1">けんじさん</span>"&gt;<span class="s1">けんじさん</span>&lt;/option&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/select&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="card"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;h2&gt;<span class="s2">📅</span> <span class="s1">今週のシフト</span> (<span class="s1">月～金</span>)&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;p style="font-size:12px; color:#666;"&gt;<span class="s1">タップすると担当が変わります</span>&lt;br&gt;<span class="s1">（あや</span> <span class="s1">⇄</span> <span class="s1">けんじさん</span> <span class="s1">⇄</span> <span class="s1">未定）</span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;table id="shiftTable"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;tr&gt;&lt;th&gt;<span class="s1">曜日</span>&lt;/th&gt;&lt;th&gt;<span class="s1">朝</span> (<span class="s1">送り</span>)&lt;/th&gt;&lt;th&gt;<span class="s1">夕</span> (<span class="s1">迎え</span>)&lt;/th&gt;&lt;/tr&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/table&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="card"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;h2&gt;<span class="s2">💬</span> <span class="s1">連絡チャット</span>&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div id="chatBox" class="chat-box"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;input type="text" id="chatInput" placeholder="<span class="s1">メッセージを入力</span>..."&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;button class="btn btn-aya" onclick="sendMessage()" style="background: #4CAF50;"&gt;<span class="s1">送信する</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>// 1. <span class="s1">いただいた鍵で</span>Firebase<span class="s1">に接続</span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const firebaseConfig = {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>apiKey: "AIzaSyDiTWsBZSTEAt_xM_SU9yu7QOAAh_c9Cns",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>authDomain: "okurimukae-8a08e.firebaseapp.com",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>projectId: "okurimukae-8a08e",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>storageBucket: "okurimukae-8a08e.firebasestorage.app",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>messagingSenderId: "460205449169",</p>
+<p class="p1"><span class="Apple-converted-space">      </span>appId: "1:460205449169:web:325d073bdbdc84b0134af0"</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>firebase.initializeApp(firebaseConfig);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const db = firebase.firestore();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// 2. <span class="s1">シフト表を作る</span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const days = ["<span class="s1">月</span>", "<span class="s1">火</span>", "<span class="s1">水</span>", "<span class="s1">木</span>", "<span class="s1">金</span>"];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const times = ["<span class="s1">朝</span>", "<span class="s1">夕</span>"];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const shiftTable = document.getElementById("shiftTable");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>days.forEach(day =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>let tr = document.createElement("tr");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>let tdDay = document.createElement("td");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>tdDay.innerText = day;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>tr.appendChild(tdDay);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>times.forEach(time =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let td = document.createElement("td");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>td.id = `shift-${day}-${time}`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>td.className = "btn-none";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>td.innerText = "<span class="s1">未定</span>";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>td.onclick = () =&gt; toggleShift(day, time);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>tr.appendChild(td);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p1"><span class="Apple-converted-space">      </span>shiftTable.appendChild(tr);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p3"><span class="s3"><span class="Apple-converted-space">    </span>// 3. </span>シフト変更をデータベースに保存</p>
+<p class="p1"><span class="Apple-converted-space">    </span>async function toggleShift(day, time) {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const docRef = db.collection("shifts").doc(`${day}-${time}`);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const currentText = document.getElementById(`shift-${day}-${time}`).innerText;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>let nextUser = currentText === "<span class="s1">未定</span>" ? "<span class="s1">あや</span>" : (currentText === "<span class="s1">あや</span>" ? "<span class="s1">けんじさん</span>" : "<span class="s1">未定</span>");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>await docRef.set({ user: nextUser });</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p3"><span class="s3"><span class="Apple-converted-space">    </span>// 4. </span>データベースの変更を自動で画面に反映（リアルタイム同期）</p>
+<p class="p1"><span class="Apple-converted-space">    </span>db.collection("shifts").onSnapshot(snapshot =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>snapshot.docChanges().forEach(change =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const docId = change.doc.id;<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const data = change.doc.data();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const element = document.getElementById(`shift-${docId}`);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(element) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>element.innerText = data.user;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>element.className = data.user === "<span class="s1">あや</span>" ? "btn-aya" : (data.user === "<span class="s1">けんじさん</span>" ? "btn-kenji" : "btn-none");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// 5. <span class="s1">チャット機能</span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const chatBox = document.getElementById("chatBox");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const chatInput = document.getElementById("chatInput");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>async function sendMessage() {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const text = chatInput.value.trim();</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(!text) return;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const sender = document.getElementById("userSelect").value;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>await db.collection("chats").add({</p>
+<p class="p1"><span class="Apple-converted-space">        </span>text: text,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>sender: sender,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>timestamp: firebase.firestore.FieldValue.serverTimestamp()</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p1"><span class="Apple-converted-space">      </span>chatInput.value = "";</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>db.collection("chats").orderBy("timestamp").onSnapshot(snapshot =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>chatBox.innerHTML = "";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>snapshot.forEach(doc =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const data = doc.data();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(data.text) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const wrapper = document.createElement("div");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>wrapper.className = "msg-wrapper";</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const div = document.createElement("div");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>div.className = `msg ${data.sender === "<span class="s1">あや</span>" ? "aya" : "kenji"}`;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>div.innerText = `${data.sender}: ${data.text}`;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>wrapper.appendChild(div);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>chatBox.appendChild(wrapper);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p1"><span class="Apple-converted-space">      </span>chatBox.scrollTop = chatBox.scrollHeight;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
 </body>
 </html>
