@@ -4,36 +4,66 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>あかりちゃん 送迎アプリ</title>
-  
+
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
     body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f4f7f6; color: #333; }
     header { background: #ff9a9e; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; }
-    .container { padding: 15px; }
+    .container { padding: 15px; max-width: 500px; margin: 0 auto; }
     .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
     h2 { margin-top: 0; font-size: 18px; color: #555; border-bottom: 2px solid #ff9a9e; padding-bottom: 5px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+    th, td { border: 1px solid #ddd; padding: 10px 6px; text-align: center; font-size: 14px; }
     th { background: #fef0f0; }
     .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 5px;}
-    .btn-aya { background: #ff758c; }
-    .btn-kenji { background: #4facfe; }
+    .btn-aya { background: #ff758c; color: white; }
+    .btn-kenji { background: #4facfe; color: white; }
     .btn-none { background: #e0e0e0; color: #333; }
+    .btn-holiday { background: #fff3cd; color: #b08b00; font-size: 12px; }
     .chat-box { height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #fafafa; border-radius: 5px;}
     .msg { margin-bottom: 10px; padding: 8px; border-radius: 5px; max-width: 80%; display: inline-block; clear: both; float: left; }
     .msg.aya { background: #ffe2e6; float: right; }
     .msg.kenji { background: #e2f3ff; }
     .msg-wrapper { overflow: hidden; width: 100%; }
     input, select { padding: 10px; width: calc(100% - 22px); margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;}
+
+    /* Week nav */
+    .week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .week-nav button { background: #ff9a9e; color: white; border: none; border-radius: 50%; width: 34px; height: 34px; font-size: 18px; cursor: pointer; }
+    .week-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .week-label { font-weight: bold; font-size: 15px; }
+
+    /* Day column */
+    .day-cell { font-weight: bold; }
+    .day-cell .date { display: block; font-size: 11px; color: #888; margin-top: 2px; font-weight: normal; }
+    .day-cell.today { color: #ff758c; }
+    .day-cell.today .date { color: #ff758c; }
+    .day-cell.holiday { color: #b08b00; }
+    .holiday-name { font-size: 10px; color: #b08b00; display: block; margin-top: 2px; }
+
+    /* Weather card */
+    .weather-card { background: linear-gradient(135deg, #fff, #fef8f8); }
+    .weather-today { display: flex; align-items: center; gap: 14px; }
+    .weather-icon { font-size: 44px; }
+    .weather-temp { font-size: 24px; font-weight: bold; color: #ff758c; }
+    .weather-desc { font-size: 13px; color: #666; }
+    .weather-loc { font-size: 12px; color: #888; }
+    .weather-forecast { display: flex; gap: 6px; margin-top: 12px; justify-content: space-between; }
+    .forecast-day { flex: 1; text-align: center; background: #fef0f0; padding: 8px 4px; border-radius: 6px; font-size: 12px; }
+    .forecast-day .f-day { font-weight: bold; color: #555; }
+    .forecast-day .f-icon { font-size: 20px; margin: 4px 0; }
+    .forecast-day .f-temp { color: #888; font-size: 11px; }
+
+    .loading { text-align: center; color: #aaa; font-size: 13px; padding: 10px; }
   </style>
 </head>
 <body>
-
   <header>🌸 あかりちゃん 送迎アプリ</header>
-
   <div class="container">
+
+    <!-- User selector -->
     <div class="card">
       <label style="font-weight: bold;">👤 あなたはどっち？:</label>
       <select id="userSelect">
@@ -42,14 +72,27 @@
       </select>
     </div>
 
-    <div class="card">
-      <h2>📅 今週のシフト (月〜金)</h2>
-      <p style="font-size:12px; color:#666;">タップすると担当が変わります<br>（あや ⇄ けんじさん ⇄ 未定）</p>
-      <table id="shiftTable">
-        <tr><th>曜日</th><th>朝 (送り)</th><th>夕 (迎え)</th></tr>
-        </table>
+    <!-- Weather card -->
+    <div class="card weather-card">
+      <h2>☀️ 大田区の天気</h2>
+      <div id="weatherContent" class="loading">天気を読み込み中...</div>
     </div>
 
+    <!-- Shift table -->
+    <div class="card">
+      <h2>📅 シフト表 (月〜金)</h2>
+      <div class="week-nav">
+        <button id="prevWeek" onclick="changeWeek(-1)">‹</button>
+        <span class="week-label" id="weekLabel"></span>
+        <button id="nextWeek" onclick="changeWeek(1)">›</button>
+      </div>
+      <p style="font-size:12px; color:#666; margin: 8px 0;">タップすると担当が変わります<br>（あや ⇄ けんじさん ⇄ 未定）<br>🎌 祝日は自動でお休みになります</p>
+      <table id="shiftTable">
+        <tr><th>曜日</th><th>朝 (送り)</th><th>夕 (迎え)</th></tr>
+      </table>
+    </div>
+
+    <!-- Chat -->
     <div class="card">
       <h2>💬 連絡チャット</h2>
       <div id="chatBox" class="chat-box"></div>
@@ -59,7 +102,7 @@
   </div>
 
   <script>
-    // 1. いただいた鍵でFirebaseに接続
+    // ===== 1. Firebase接続 =====
     const firebaseConfig = {
       apiKey: "AIzaSyDiTWsBZSTEAt_xM_SU9yu7QOAAh_c9Cns",
       authDomain: "okurimukae-8a08e.firebaseapp.com",
@@ -71,50 +114,180 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 2. シフト表を作る
-    const days = ["月", "火", "水", "木", "金"];
-    const times = ["朝", "夕"];
+    // ===== 2. ヘルパー関数 =====
+    const DAY_NAMES = ["日","月","火","水","木","金","土"];
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function fmtDate(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+    function getMonday(d){
+      const r = new Date(d);
+      const day = r.getDay();
+      r.setDate(r.getDate() - (day===0 ? 6 : day-1));
+      r.setHours(0,0,0,0);
+      return r;
+    }
+    function addDays(d, n){ const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+    function isSameDay(a,b){
+      return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+    }
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    let currentMonday = getMonday(today);
+
+    // ===== 3. 日本の祝日を取得 =====
+    let holidays = {}; // { "2026-01-01": "元日", ... }
+
+    async function loadHolidays() {
+      try {
+        const res = await fetch('https://holidays-jp.github.io/api/v1/date.json');
+        holidays = await res.json();
+      } catch(e) {
+        console.log('祝日の取得に失敗:', e);
+      }
+    }
+
+    // ===== 4. 大田区の天気を取得（Open-Meteo） =====
+    async function loadWeather() {
+      // 大田区の緯度経度
+      const lat = 35.5614, lon = 139.7161;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia/Tokyo&forecast_days=5`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        renderWeather(data);
+      } catch(e) {
+        document.getElementById('weatherContent').innerHTML = '天気情報を取得できませんでした';
+      }
+    }
+
+    // 天気コード → 絵文字 & 日本語
+    function weatherCodeInfo(code){
+      if(code===0) return {icon:'☀️', desc:'快晴'};
+      if([1,2].includes(code)) return {icon:'🌤', desc:'晴れ'};
+      if(code===3) return {icon:'☁️', desc:'くもり'};
+      if([45,48].includes(code)) return {icon:'🌫', desc:'霧'};
+      if([51,53,55,56,57].includes(code)) return {icon:'🌦', desc:'霧雨'};
+      if([61,63,65,66,67,80,81,82].includes(code)) return {icon:'🌧', desc:'雨'};
+      if([71,73,75,77,85,86].includes(code)) return {icon:'❄️', desc:'雪'};
+      if([95,96,99].includes(code)) return {icon:'⛈', desc:'雷雨'};
+      return {icon:'🌡', desc:'---'};
+    }
+
+    function renderWeather(data) {
+      const cur = data.current_weather;
+      const curInfo = weatherCodeInfo(cur.weathercode);
+      const days = data.daily;
+
+      let forecastHTML = '';
+      for (let i=0; i<Math.min(5, days.time.length); i++) {
+        const d = new Date(days.time[i]);
+        const info = weatherCodeInfo(days.weathercode[i]);
+        const isToday = isSameDay(d, today);
+        forecastHTML += `
+          <div class="forecast-day" ${isToday?'style="background:#ffe2e6;"':''}>
+            <div class="f-day">${isToday?'今日':DAY_NAMES[d.getDay()]}</div>
+            <div class="f-icon">${info.icon}</div>
+            <div class="f-temp">${Math.round(days.temperature_2m_max[i])}°/${Math.round(days.temperature_2m_min[i])}°</div>
+          </div>`;
+      }
+
+      document.getElementById('weatherContent').innerHTML = `
+        <div class="weather-today">
+          <div class="weather-icon">${curInfo.icon}</div>
+          <div style="flex:1;">
+            <div class="weather-temp">${Math.round(cur.temperature)}°C</div>
+            <div class="weather-desc">${curInfo.desc} · 風速 ${cur.windspeed}km/h</div>
+            <div class="weather-loc">📍 東京都 大田区</div>
+          </div>
+        </div>
+        <div class="weather-forecast">${forecastHTML}</div>
+      `;
+    }
+
+    // ===== 5. シフト表を作る（日付入り・祝日対応） =====
     const shiftTable = document.getElementById("shiftTable");
 
-    days.forEach(day => {
-      let tr = document.createElement("tr");
-      let tdDay = document.createElement("td");
-      tdDay.innerText = day;
-      tr.appendChild(tdDay);
+    function renderShiftTable() {
+      // ヘッダ以外削除
+      while (shiftTable.rows.length > 1) shiftTable.deleteRow(1);
 
-      times.forEach(time => {
-        let td = document.createElement("td");
-        td.id = `shift-${day}-${time}`;
-        td.className = "btn-none";
-        td.innerText = "未定";
-        td.onclick = () => toggleShift(day, time);
-        tr.appendChild(td);
-      });
-      shiftTable.appendChild(tr);
-    });
+      const endDay = addDays(currentMonday, 4);
+      document.getElementById('weekLabel').textContent =
+        `${currentMonday.getMonth()+1}月${currentMonday.getDate()}日 〜 ${endDay.getMonth()+1}月${endDay.getDate()}日`;
 
-    // 3. シフト変更をデータベースに保存
-    async function toggleShift(day, time) {
-      const docRef = db.collection("shifts").doc(`${day}-${time}`);
-      const currentText = document.getElementById(`shift-${day}-${time}`).innerText;
+      for (let i=0; i<5; i++) {
+        const d = addDays(currentMonday, i);
+        const key = fmtDate(d);
+        const dayName = DAY_NAMES[d.getDay()];
+        const isToday = isSameDay(d, today);
+        const holidayName = holidays[key];
+
+        const tr = document.createElement('tr');
+
+        const tdDay = document.createElement('td');
+        tdDay.className = 'day-cell' + (isToday?' today':'') + (holidayName?' holiday':'');
+        tdDay.innerHTML = `${dayName}<span class="date">${d.getMonth()+1}/${d.getDate()}</span>${holidayName?`<span class="holiday-name">🎌${holidayName}</span>`:''}`;
+        tr.appendChild(tdDay);
+
+        ['朝','夕'].forEach(time => {
+          const td = document.createElement('td');
+          td.id = `shift-${key}-${time}`;
+          if (holidayName) {
+            td.className = 'btn-holiday';
+            td.innerText = 'お休み';
+          } else {
+            td.className = 'btn-none';
+            td.innerText = '未定';
+            td.style.cursor = 'pointer';
+            td.onclick = () => toggleShift(key, time);
+          }
+          tr.appendChild(td);
+        });
+
+        shiftTable.appendChild(tr);
+      }
+
+      // Firebase上のデータで更新
+      applyShiftData();
+    }
+
+    // ===== 6. シフト変更をデータベースに保存 =====
+    async function toggleShift(dateKey, time) {
+      const docRef = db.collection("shifts").doc(`${dateKey}-${time}`);
+      const element = document.getElementById(`shift-${dateKey}-${time}`);
+      const currentText = element.innerText;
       let nextUser = currentText === "未定" ? "あや" : (currentText === "あや" ? "けんじさん" : "未定");
       await docRef.set({ user: nextUser });
     }
 
-    // 4. データベースの変更を自動で画面に反映（リアルタイム同期）
+    // ===== 7. リアルタイム同期 =====
+    let shiftCache = {};
     db.collection("shifts").onSnapshot(snapshot => {
       snapshot.docChanges().forEach(change => {
-        const docId = change.doc.id; 
+        const docId = change.doc.id;
         const data = change.doc.data();
-        const element = document.getElementById(`shift-${docId}`);
-        if(element) {
-          element.innerText = data.user;
-          element.className = data.user === "あや" ? "btn-aya" : (data.user === "けんじさん" ? "btn-kenji" : "btn-none");
-        }
+        shiftCache[docId] = data.user;
       });
+      applyShiftData();
     });
 
-    // 5. チャット機能
+    function applyShiftData(){
+      Object.entries(shiftCache).forEach(([docId, user]) => {
+        const el = document.getElementById(`shift-${docId}`);
+        if (el && !el.className.includes('btn-holiday')) {
+          el.innerText = user;
+          el.className = user === "あや" ? "btn-aya" : (user === "けんじさん" ? "btn-kenji" : "btn-none");
+          el.style.cursor = 'pointer';
+        }
+      });
+    }
+
+    // ===== 8. 週移動 =====
+    function changeWeek(dir) {
+      currentMonday = addDays(currentMonday, dir*7);
+      renderShiftTable();
+    }
+
+    // ===== 9. チャット =====
     const chatBox = document.getElementById("chatBox");
     const chatInput = document.getElementById("chatInput");
 
@@ -129,6 +302,8 @@
       });
       chatInput.value = "";
     }
+
+    chatInput.addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
 
     db.collection("chats").orderBy("timestamp").onSnapshot(snapshot => {
       chatBox.innerHTML = "";
@@ -146,6 +321,13 @@
       });
       chatBox.scrollTop = chatBox.scrollHeight;
     });
+
+    // ===== 10. 起動 =====
+    (async () => {
+      await loadHolidays();
+      renderShiftTable();
+      loadWeather();
+    })();
   </script>
 </body>
 </html>
