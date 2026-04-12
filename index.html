@@ -22,6 +22,7 @@
     .btn-kenji { background: #4facfe; color: white; }
     .btn-none { background: #e0e0e0; color: #333; }
     .btn-holiday { background: #fff3cd; color: #b08b00; font-size: 12px; }
+    .btn-custom  { background: #c3f0ca; color: #276749; }
     .chat-box { height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #fafafa; border-radius: 5px;}
     .msg { margin-bottom: 10px; padding: 8px; border-radius: 5px; max-width: 80%; display: inline-block; clear: both; float: left; }
     .msg.aya { background: #ffe2e6; float: right; }
@@ -86,7 +87,7 @@
         <span class="week-label" id="weekLabel"></span>
         <button id="nextWeek" onclick="changeWeek(1)">›</button>
       </div>
-      <p style="font-size:12px; color:#666; margin: 8px 0;">タップすると担当が変わります<br>（あや ⇄ けんじ ⇄ 未定）<br>🎌 祝日は自動でお休みになります</p>
+      <p style="font-size:12px; color:#666; margin: 8px 0;">タップすると担当が変わります<br>（あや → けんじ → 自由記入 → 未定）<br>🎌 祝日は自動でお休みになります</p>
       <table id="shiftTable">
         <tr><th>曜日</th><th>朝 (送り)</th><th>夕 (迎え)</th></tr>
       </table>
@@ -264,7 +265,20 @@
       const docRef = db.collection("shifts").doc(`${dateKey}-${time}`);
       const element = document.getElementById(`shift-${dateKey}-${time}`);
       const currentText = element.innerText;
-      let nextUser = currentText === "未定" ? "あや" : (currentText === "あや" ? "けんじ" : "未定");
+      let nextUser;
+      if (currentText === "未定") {
+        nextUser = "あや";
+      } else if (currentText === "あや") {
+        nextUser = "けんじ";
+      } else if (currentText === "けんじ") {
+        // 自由記入
+        const name = window.prompt("担当者の名前を入力してください", "");
+        if (name === null) return; // キャンセル
+        nextUser = name.trim() || "未定";
+      } else {
+        // 自由記入 or その他 → 未定に戻す
+        nextUser = "未定";
+      }
       await docRef.set({ user: nextUser });
     }
 
@@ -284,7 +298,10 @@
         const el = document.getElementById(`shift-${docId}`);
         if (el && !el.className.includes('btn-holiday')) {
           el.innerText = user;
-          el.className = user === "あや" ? "btn-aya" : (user === "けんじ" ? "btn-kenji" : "btn-none");
+          el.className = user === "あや" ? "btn-aya"
+                       : user === "けんじ" ? "btn-kenji"
+                       : user === "未定"  ? "btn-none"
+                       : "btn-custom";
           el.style.cursor = 'pointer';
         }
       });
