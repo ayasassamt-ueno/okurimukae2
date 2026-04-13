@@ -159,7 +159,7 @@
     async function loadWeather() {
       // 大田区の緯度経度
       const lat = 35.5614, lon = 139.7161;
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia/Tokyo&forecast_days=5`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia/Tokyo&forecast_days=5`;
       try {
         const res = await fetch(url);
         const data = await res.json();
@@ -197,6 +197,7 @@
             <div class="f-day">${isToday?'今日':DAY_NAMES[d.getDay()]}</div>
             <div class="f-icon">${info.icon}</div>
             <div class="f-temp">${Math.round(days.temperature_2m_max[i])}°/${Math.round(days.temperature_2m_min[i])}°</div>
+            <div class="f-temp" style="color:#4facfe;">💧${days.precipitation_probability_max[i]}%</div>
           </div>`;
       }
 
